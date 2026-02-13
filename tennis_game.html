@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tennis Algorithm Game</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  canvas {
+    border: 2px solid #333;
+    border-radius: 4px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+// ===== CONFIGURATION =====
+const QUESTION_TIME_LIMIT = 30;
+const CANVAS_WIDTH = 1060;
+const CANVAS_HEIGHT = 600;
+const COURT_AREA_WIDTH = 800;
+const BALL_BASE_SPEED = 0.006;
+const QUESTION_CHANCE = 0.5;
+const SLOW_MOTION_FACTOR = 0.2;
+const CPU_SKILL = 0.7;
+const COURT_COLOR = "#2d7a3a";
+const LINE_COLOR = "#ffffff";
+
+// Court geometry
+const COURT_BOTTOM_Y = 550;
+const COURT_TOP_Y = 80;
+const COURT_BOTTOM_WIDTH = 700;
+const COURT_TOP_WIDTH = 300;
+const COURT_CENTER_X = COURT_AREA_WIDTH / 2;
+const NET_DEPTH = 0.5;
+
+// ===== QUESTION BANK =====
+const QUESTIONS = [
+  // Python (~15)
+  { category: "Python", question: "What is the correct way to define a function in Python?", choices: ["function myFunc():", "def myFunc():", "fun myFunc():", "define myFunc():"], answer: 1 },
+  { category: "Python", question: "Which keyword is used to create a class in Python?", choices: ["struct", "object", "class", "define"], answer: 2 },
+  { category: "Python", question: "How do you start a for loop iterating over a list in Python?", choices: ["for item in list:", "foreach item in list:", "for (item : list):", "loop item in list:"], answer: 0 },
+  { category: "Python", question: "What does len([1, 2, 3]) return?", choices: ["2", "3", "4", "Error"], answer: 1 },
+  { category: "Python", question: "Which data type is immutable in Python?", choices: ["list", "dict", "set", "tuple"], answer: 3 },
+  { category: "Python", question: "How do you add an element to the end of a list?", choices: [".add()", ".append()", ".push()", ".insert()"], answer: 1 },
+  { category: "Python", question: "What does 'elif' stand for in Python?", choices: ["else then if", "else if", "element if", "elseif"], answer: 1 },
+  { category: "Python", question: "Which operator is used for floor division in Python?", choices: ["/", "//", "%", "**"], answer: 1 },
+  { category: "Python", question: "What is the output of print(type(3.14))?", choices: ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"], answer: 1 },
+  { category: "Python", question: "How do you create a dictionary in Python?", choices: ["dict = []", "dict = ()", "dict = {}", "dict = <>"], answer: 2 },
+  { category: "Python", question: "What does the 'pass' keyword do in Python?", choices: ["Exits the loop", "Skips to next iteration", "Does nothing (placeholder)", "Returns None"], answer: 2 },
+  { category: "Python", question: "Which method removes whitespace from both ends of a string?", choices: [".clean()", ".strip()", ".trim()", ".remove()"], answer: 1 },
+  { category: "Python", question: "What is the correct way to import a module?", choices: ["include math", "import math", "require math", "using math"], answer: 1 },
+  { category: "Python", question: "What does range(3) produce?", choices: ["[1, 2, 3]", "[0, 1, 2]", "[0, 1, 2, 3]", "[1, 2]"], answer: 1 },
+  { category: "Python", question: "How do you handle exceptions in Python?", choices: ["try/catch", "try/except", "try/handle", "begin/rescue"], answer: 1 },
+
+  // JavaScript (~10)
+  { category: "JavaScript", question: "Which keyword declares a block-scoped variable in JS?", choices: ["var", "let", "define", "dim"], answer: 1 },
+  { category: "JavaScript", question: "What does === check in JavaScript?", choices: ["Value only", "Type only", "Value and type", "Reference"], answer: 2 },
+  { category: "JavaScript", question: "How do you write an arrow function?", choices: ["function => {}", "() -> {}", "() => {}", "=> () {}"], answer: 2 },
+  { category: "JavaScript", question: "Which method adds an element to the end of an array?", choices: [".append()", ".add()", ".push()", ".insert()"], answer: 2 },
+  { category: "JavaScript", question: "What does JSON stand for?", choices: ["JavaScript Object Notation", "JavaScript Online Network", "Java Standard Object Notation", "JavaScript Oriented Names"], answer: 0 },
+  { category: "JavaScript", question: "Which method selects an element by ID in the DOM?", choices: ["getElement()", "findById()", "getElementById()", "querySelector.id()"], answer: 2 },
+  { category: "JavaScript", question: "What is the result of typeof null?", choices: ["'null'", "'undefined'", "'object'", "'NaN'"], answer: 2 },
+  { category: "JavaScript", question: "How do you declare a constant in JavaScript?", choices: ["constant x", "const x", "let const x", "final x"], answer: 1 },
+  { category: "JavaScript", question: "Which array method creates a new array with filtered elements?", choices: [".map()", ".filter()", ".reduce()", ".find()"], answer: 1 },
+  { category: "JavaScript", question: "What does 'async/await' help with?", choices: ["Loops", "Error handling", "Asynchronous code", "DOM manipulation"], answer: 2 },
+
+  // HTML/CSS (~10)
+  { category: "HTML/CSS", question: "Which HTML tag is used for the largest heading?", choices: ["<head>", "<h6>", "<h1>", "<header>"], answer: 2 },
+  { category: "HTML/CSS", question: "What CSS property changes text color?", choices: ["text-color", "font-color", "color", "text-style"], answer: 2 },
+  { category: "HTML/CSS", question: "Which HTML tag creates a hyperlink?", choices: ["<link>", "<a>", "<href>", "<url>"], answer: 1 },
+  { category: "HTML/CSS", question: "What does CSS stand for?", choices: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style System", "Colorful Style Sheets"], answer: 1 },
+  { category: "HTML/CSS", question: "Which CSS property makes an element a flex container?", choices: ["display: block", "display: flex", "display: grid", "display: inline"], answer: 1 },
+  { category: "HTML/CSS", question: "What is the correct HTML for an unordered list?", choices: ["<ol>", "<list>", "<ul>", "<dl>"], answer: 2 },
+  { category: "HTML/CSS", question: "Which CSS property controls spacing inside an element?", choices: ["margin", "padding", "border", "spacing"], answer: 1 },
+  { category: "HTML/CSS", question: "What is the semantic HTML tag for navigation?", choices: ["<div id='nav'>", "<navigation>", "<nav>", "<menu>"], answer: 2 },
+  { category: "HTML/CSS", question: "Which selector targets elements with class 'box'?", choices: ["#box", ".box", "*box", "box"], answer: 1 },
+  { category: "HTML/CSS", question: "What CSS unit is relative to the root font size?", choices: ["em", "px", "rem", "%"], answer: 2 },
+
+  // SQL (~7)
+  { category: "SQL", question: "Which SQL clause filters rows?", choices: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: 2 },
+  { category: "SQL", question: "Which JOIN returns only matching rows from both tables?", choices: ["LEFT JOIN", "RIGHT JOIN", "INNER JOIN", "FULL JOIN"], answer: 2 },
+  { category: "SQL", question: "What SQL keyword groups rows for aggregate functions?", choices: ["ORDER BY", "GROUP BY", "HAVING", "SORT BY"], answer: 1 },
+  { category: "SQL", question: "Which statement adds a new row to a table?", choices: ["ADD INTO", "INSERT INTO", "CREATE ROW", "APPEND TO"], answer: 1 },
+  { category: "SQL", question: "What does SELECT DISTINCT do?", choices: ["Selects the first row", "Removes duplicate rows", "Sorts results", "Limits results"], answer: 1 },
+  { category: "SQL", question: "Which clause sorts the result set?", choices: ["SORT BY", "GROUP BY", "ORDER BY", "ARRANGE BY"], answer: 2 },
+  { category: "SQL", question: "What SQL command creates a new table?", choices: ["MAKE TABLE", "NEW TABLE", "CREATE TABLE", "ADD TABLE"], answer: 2 },
+
+  // General (~5)
+  { category: "General", question: "What is the time complexity of binary search?", choices: ["O(n)", "O(log n)", "O(n log n)", "O(1)"], answer: 1 },
+  { category: "General", question: "Which data structure uses FIFO ordering?", choices: ["Stack", "Queue", "Tree", "Hash Map"], answer: 1 },
+  { category: "General", question: "What Git command stages changes for commit?", choices: ["git commit", "git push", "git add", "git stage"], answer: 2 },
+  { category: "General", question: "What does 'boolean' mean?", choices: ["A decimal number", "A true/false value", "A text string", "A list of items"], answer: 1 },
+  { category: "General", question: "Which data structure uses LIFO ordering?", choices: ["Queue", "Stack", "Array", "Linked List"], answer: 1 },
+];
+
+// ===== GAME STATE =====
+const STATES = {
+  TITLE: "TITLE",
+  SERVING: "SERVING",
+  BALL_TO_CPU: "BALL_TO_CPU",
+  CPU_RETURN: "CPU_RETURN",
+  BALL_TO_PLAYER: "BALL_TO_PLAYER",
+  QUESTION_TIME: "QUESTION_TIME",
+  RALLY_HIT: "RALLY_HIT",
+  POINT_SCORED: "POINT_SCORED",
+  GAME_OVER: "GAME_OVER",
+};
+
+let gameState = STATES.TITLE;
+let stateTimer = 0;
+
+// Ball state (logical coordinates)
+let ball = { x: 50, depth: 0.0, dx: 0, dDepth: 0, speed: BALL_BASE_SPEED, visible: true };
+let rallyCount = 0;
+
+// Player racket
+let player = { x: 50, speed: 2.5, locked: false, unlockFlash: 0 };
+
+// CPU racket
+let cpu = { x: 50, targetX: 50, speed: 1.5, error: 0 };
+
+// Scoring
+let score = {
+  playerPoints: 0, cpuPoints: 0,
+  playerGames: [0, 0, 0], cpuGames: [0, 0, 0],
+  currentSet: 0,
+  playerSets: 0, cpuSets: 0,
+  serving: "player",
+  tiebreak: false,
+  tiebreakPlayerPoints: 0, tiebreakCpuPoints: 0,
+  matchOver: false, matchWinner: "",
+};
+
+// Question state
+let questionQueue = [];
+let currentQuestion = null;
+let questionTimer = 0;
+let questionAnswered = false;
+let questionResult = ""; // "correct", "wrong", "timeout"
+let questionResultTimer = 0;
+
+// Point result display
+let pointMessage = "";
+let pointMessageTimer = 0;
+
+// Input
+let keys = {};
+let clickedAnswer = -1;
+let questionCheckedThisRally = false;
+
+// ===== CANVAS SETUP =====
+const canvas = document.getElementById("gameCanvas");
+canvas.width = CANVAS_WIDTH;
+canvas.height = CANVAS_HEIGHT;
+const ctx = canvas.getContext("2d");
+
+// ===== PERSPECTIVE PROJECTION =====
+function projectToScreen(logicalX, depth) {
+  // logicalX: 0-100 (left to right of court)
+  // depth: 0.0 (player/bottom) to 1.0 (CPU/top)
+  const topWidth = COURT_TOP_WIDTH;
+  const bottomWidth = COURT_BOTTOM_WIDTH;
+  const currentWidth = bottomWidth + (topWidth - bottomWidth) * depth;
+  const currentY = COURT_BOTTOM_Y + (COURT_TOP_Y - COURT_BOTTOM_Y) * depth;
+  const leftEdge = COURT_CENTER_X - currentWidth / 2;
+  const screenX = leftEdge + (logicalX / 100) * currentWidth;
+  return { x: screenX, y: currentY };
+}
+
+function getScaleAtDepth(depth) {
+  return 1.0 - depth * 0.55;
+}
+
+// ===== DRAWING FUNCTIONS =====
+function drawCourt() {
+  // Background
+  ctx.fillStyle = "#1a1a2e";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Court surface (trapezoid)
+  const bl = projectToScreen(0, 0);
+  const br = projectToScreen(100, 0);
+  const tl = projectToScreen(0, 1);
+  const tr = projectToScreen(100, 1);
+
+  ctx.fillStyle = COURT_COLOR;
+  ctx.beginPath();
+  ctx.moveTo(bl.x, bl.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(tl.x, tl.y);
+  ctx.closePath();
+  ctx.fill();
+
+  // Boundary lines
+  ctx.strokeStyle = LINE_COLOR;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(bl.x, bl.y); ctx.lineTo(tl.x, tl.y);
+  ctx.moveTo(br.x, br.y); ctx.lineTo(tr.x, tr.y);
+  ctx.moveTo(bl.x, bl.y); ctx.lineTo(br.x, br.y);
+  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y);
+  ctx.stroke();
+
+  // Service boxes - lines at depth 0.25 and 0.75
+  ctx.lineWidth = 1.5;
+  for (const d of [0.25, 0.75]) {
+    const sl = projectToScreen(0, d);
+    const sr = projectToScreen(100, d);
+    ctx.beginPath();
+    ctx.moveTo(sl.x, sl.y);
+    ctx.lineTo(sr.x, sr.y);
+    ctx.stroke();
+  }
+
+  // Center service line
+  const cm25 = projectToScreen(50, 0.25);
+  const cm75 = projectToScreen(50, 0.75);
+  ctx.beginPath();
+  ctx.moveTo(cm25.x, cm25.y);
+  ctx.lineTo(cm75.x, cm75.y);
+  ctx.stroke();
+
+  // Center mark at baselines
+  const cBottom = projectToScreen(50, 0);
+  const cBottomIn = projectToScreen(50, 0.03);
+  const cTop = projectToScreen(50, 1);
+  const cTopIn = projectToScreen(50, 0.97);
+  ctx.beginPath();
+  ctx.moveTo(cBottom.x, cBottom.y); ctx.lineTo(cBottomIn.x, cBottomIn.y);
+  ctx.moveTo(cTop.x, cTop.y); ctx.lineTo(cTopIn.x, cTopIn.y);
+  ctx.stroke();
+
+  // Net (dashed line at depth 0.5)
+  const nl = projectToScreen(0, NET_DEPTH);
+  const nr = projectToScreen(100, NET_DEPTH);
+  ctx.strokeStyle = "#cccccc";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(nl.x, nl.y);
+  ctx.lineTo(nr.x, nr.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Net posts
+  for (const post of [nl, nr]) {
+    ctx.fillStyle = "#888";
+    ctx.fillRect(post.x - 3, post.y - 10, 6, 20);
+  }
+}
+
+function drawBall() {
+  if (!ball.visible) return;
+
+  const pos = projectToScreen(ball.x, ball.depth);
+  const scale = getScaleAtDepth(ball.depth);
+  const radius = 8 * scale;
+
+  // Shadow
+  ctx.fillStyle = "rgba(0,0,0,0.3)";
+  ctx.beginPath();
+  ctx.ellipse(pos.x + 2, pos.y + radius + 2, radius * 0.9, radius * 0.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ball - slight oval stretch based on speed
+  const speedFactor = Math.abs(ball.dDepth) * 15;
+  const stretchX = radius * (1 + speedFactor * 0.1);
+  const stretchY = radius * (1 + speedFactor * 0.2);
+
+  // Ball glow
+  const gradient = ctx.createRadialGradient(pos.x - 1, pos.y - 1, 0, pos.x, pos.y, stretchX);
+  gradient.addColorStop(0, "#ffff88");
+  gradient.addColorStop(0.6, "#ccdd00");
+  gradient.addColorStop(1, "#99aa00");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.ellipse(pos.x, pos.y, stretchX, stretchY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Highlight
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.beginPath();
+  ctx.ellipse(pos.x - radius * 0.25, pos.y - radius * 0.25, radius * 0.35, radius * 0.25, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPlayerRacket() {
+  const pos = projectToScreen(player.x, 0.02);
+  const scale = getScaleAtDepth(0.02);
+  const headW = 28 * scale;
+  const headH = 18 * scale;
+  const handleW = 6 * scale;
+  const handleH = 14 * scale;
+
+  // Unlock flash
+  if (player.unlockFlash > 0) {
+    ctx.fillStyle = `rgba(0, 255, 100, ${player.unlockFlash * 0.4})`;
+    ctx.beginPath();
+    ctx.ellipse(pos.x, pos.y, headW + 15, headH + 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    player.unlockFlash -= 0.03;
+  }
+
+  // Handle
+  ctx.fillStyle = player.locked ? "#6b2020" : "#5a3a1a";
+  ctx.fillRect(pos.x - handleW / 2, pos.y + headH / 2, handleW, handleH);
+
+  // Racket head - light blue when unlocked, red when locked
+  if (player.locked) {
+    ctx.fillStyle = "#cc2222";
+    ctx.strokeStyle = "#ee4444";
+    ctx.lineWidth = 2;
+  } else {
+    ctx.fillStyle = "#55aadd";
+    ctx.strokeStyle = "#77ccff";
+    ctx.lineWidth = 2;
+  }
+  ctx.beginPath();
+  ctx.ellipse(pos.x, pos.y, headW, headH, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Strings
+  ctx.strokeStyle = player.locked ? "rgba(255,100,100,0.35)" : "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(pos.x + i * (headW / 3), pos.y - headH * 0.8);
+    ctx.lineTo(pos.x + i * (headW / 3), pos.y + headH * 0.8);
+    ctx.stroke();
+  }
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(pos.x - headW * 0.8, pos.y + i * (headH / 3));
+    ctx.lineTo(pos.x + headW * 0.8, pos.y + i * (headH / 3));
+    ctx.stroke();
+  }
+}
+
+function drawCPURacket() {
+  const pos = projectToScreen(cpu.x, 0.98);
+  const scale = getScaleAtDepth(0.98);
+  const headW = 24 * scale;
+  const headH = 14 * scale;
+  const handleW = 5 * scale;
+  const handleH = 10 * scale;
+
+  // Handle
+  ctx.fillStyle = "#8a6a20";
+  ctx.fillRect(pos.x - handleW / 2, pos.y - headH / 2 - handleH, handleW, handleH);
+
+  // Racket head - gold
+  ctx.fillStyle = "#d4aa30";
+  ctx.strokeStyle = "#e8c44a";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(pos.x, pos.y, headW, headH, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Strings
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.lineWidth = 0.5;
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(pos.x + i * (headW / 2), pos.y - headH * 0.7);
+    ctx.lineTo(pos.x + i * (headW / 2), pos.y + headH * 0.7);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x - headW * 0.7, pos.y + i * (headH / 2));
+    ctx.lineTo(pos.x + headW * 0.7, pos.y + i * (headH / 2));
+    ctx.stroke();
+  }
+}
+
+// Seven-segment digit renderer for classic scoreboard look
+// Segments: a=top, b=topRight, c=bottomRight, d=bottom, e=bottomLeft, f=topLeft, g=middle
+const SEGMENT_MAP = {
+  "0": [1,1,1,1,1,1,0], "1": [0,1,1,0,0,0,0], "2": [1,1,0,1,1,0,1],
+  "3": [1,1,1,1,0,0,1], "4": [0,1,1,0,0,1,1], "5": [1,0,1,1,0,1,1],
+  "6": [1,0,1,1,1,1,1], "7": [1,1,1,0,0,0,0], "8": [1,1,1,1,1,1,1],
+  "9": [1,1,1,1,0,1,1],
+};
+
+function drawSegmentDigit(cx, cy, w, h, char, onColor, offColor) {
+  // draws a single seven-segment digit centered at cx, cy
+  const segs = SEGMENT_MAP[char];
+  if (!segs) return;
+  const hw = w / 2;
+  const hh = h / 2;
+  const t = Math.max(1.5, w * 0.18); // segment thickness
+  const g = 1; // gap between segments
+
+  // segment definitions: [x1, y1, x2, y2, isHorizontal]
+  const defs = [
+    [cx - hw + g, cy - hh,     cx + hw - g, cy - hh,     true],  // a: top
+    [cx + hw,     cy - hh + g, cx + hw,     cy - g,       false], // b: topRight
+    [cx + hw,     cy + g,      cx + hw,     cy + hh - g,  false], // c: bottomRight
+    [cx - hw + g, cy + hh,     cx + hw - g, cy + hh,      true],  // d: bottom
+    [cx - hw,     cy + g,      cx - hw,     cy + hh - g,  false], // e: bottomLeft
+    [cx - hw,     cy - hh + g, cx - hw,     cy - g,       false], // f: topLeft
+    [cx - hw + g, cy,          cx + hw - g, cy,           true],  // g: middle
+  ];
+
+  for (let i = 0; i < 7; i++) {
+    const [x1, y1, x2, y2, horiz] = defs[i];
+    ctx.fillStyle = segs[i] ? onColor : offColor;
+    if (horiz) {
+      // horizontal segment: flat parallelogram
+      ctx.beginPath();
+      ctx.moveTo(x1 + t * 0.4, y1 - t / 2);
+      ctx.lineTo(x2 - t * 0.4, y1 - t / 2);
+      ctx.lineTo(x2, y1);
+      ctx.lineTo(x2 - t * 0.4, y1 + t / 2);
+      ctx.lineTo(x1 + t * 0.4, y1 + t / 2);
+      ctx.lineTo(x1, y1);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // vertical segment
+      ctx.beginPath();
+      ctx.moveTo(x1 - t / 2, y1 + t * 0.4);
+      ctx.lineTo(x1, y1);
+      ctx.lineTo(x1 + t / 2, y1 + t * 0.4);
+      ctx.lineTo(x1 + t / 2, y2 - t * 0.4);
+      ctx.lineTo(x1, y2);
+      ctx.lineTo(x1 - t / 2, y2 - t * 0.4);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+function drawSegmentText(x, cy, text, digitW, digitH, spacing, onColor, offColor) {
+  // draws a string of digits using seven-segment display, returns total width
+  let curX = x;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === ":") {
+      // colon for clock
+      const dotR = digitW * 0.12;
+      ctx.fillStyle = onColor;
+      ctx.beginPath();
+      ctx.arc(curX + digitW * 0.2, cy - digitH * 0.2, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(curX + digitW * 0.2, cy + digitH * 0.2, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      curX += digitW * 0.5;
+    } else if (ch === ".") {
+      const dotR = digitW * 0.12;
+      ctx.fillStyle = onColor;
+      ctx.beginPath();
+      ctx.arc(curX + digitW * 0.15, cy + digitH / 2 + dotR, dotR, 0, Math.PI * 2);
+      ctx.fill();
+      curX += digitW * 0.4;
+    } else if (ch === " ") {
+      curX += digitW * 0.6;
+    } else if (ch === "-") {
+      // just the middle segment
+      ctx.fillStyle = onColor;
+      const t = Math.max(1.5, digitW * 0.18);
+      const hw = digitW / 2;
+      const sx = curX + hw;
+      ctx.beginPath();
+      ctx.moveTo(sx - hw + 2, cy - t / 2);
+      ctx.lineTo(sx + hw - 2, cy - t / 2);
+      ctx.lineTo(sx + hw - 2, cy + t / 2);
+      ctx.lineTo(sx - hw + 2, cy + t / 2);
+      ctx.closePath();
+      ctx.fill();
+      curX += digitW + spacing;
+    } else if (SEGMENT_MAP[ch]) {
+      drawSegmentDigit(curX + digitW / 2, cy, digitW, digitH, ch, onColor, offColor);
+      curX += digitW + spacing;
+    }
+  }
+  return curX - x;
+}
+
+function drawScoreboard() {
+  // Classic Wimbledon scoreboard - compact, positioned top-left to avoid CPU
+  const boardW = 350;
+  const clockBarH = 26;
+  const headerH = 14;
+  const rowH = 24;
+  const boardH = clockBarH + headerH + rowH * 2;
+  const bx = 8;
+  const by = 4;
+
+  // Colors matching the real Wimbledon board
+  const boardBg = "#0a2e1a";
+  const boardBgLight = "#0d3820";
+  const digitOn = "#e8d44d";
+  const digitOff = "#1a3d25";
+  const labelColor = "#c0c8b0";
+  const dividerColor = "#2a5a3a";
+  const frameBorder = "#1a4a2a";
+
+  // Reset letterSpacing before any text drawing
+  ctx.letterSpacing = "0px";
+
+  // Outer frame
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.6)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#050f0a";
+  ctx.fillRect(bx - 3, by - 3, boardW + 6, boardH + 6);
+  ctx.restore();
+
+  // Board border
+  ctx.strokeStyle = frameBorder;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(bx - 1, by - 1, boardW + 2, boardH + 2);
+
+  // ===== CLOCK BAR (top) =====
+  ctx.fillStyle = "#061a0e";
+  ctx.fillRect(bx, by, boardW, clockBarH);
+
+  // Clock time (real browser time) - LEFT side, larger digits
+  const now = new Date();
+  const hrs = String(now.getHours()).padStart(2, "0");
+  const mins = String(now.getMinutes()).padStart(2, "0");
+  const clockY = by + clockBarH / 2 + 1;
+  drawSegmentText(bx + 12, clockY, hrs + ":" + mins, 10, 16, 2, digitOn, digitOff);
+
+  // XELOR brand text - centered
+  ctx.font = "bold 12px 'Courier New', monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#d4d4c8";
+  ctx.letterSpacing = "4px";
+  ctx.fillText("XELOR", bx + boardW / 2, by + 17);
+  ctx.letterSpacing = "0px";
+
+  // Rally count on right side of clock bar
+  if (rallyCount > 0) {
+    const rallyStr = String(rallyCount).padStart(2, "0");
+    drawSegmentText(bx + boardW - 40, clockY, rallyStr, 10, 16, 2, "#88aa66", digitOff);
+  }
+
+  // Clock bar divider
+  ctx.strokeStyle = dividerColor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(bx, by + clockBarH);
+  ctx.lineTo(bx + boardW, by + clockBarH);
+  ctx.stroke();
+
+  // ===== COLUMN HEADER ROW =====
+  const hdrY = by + clockBarH;
+  ctx.fillStyle = boardBg;
+  ctx.fillRect(bx, hdrY, boardW, headerH);
+
+  // Column layout for 350px wide board
+  const cols = {
+    serv: bx + 4,
+    name: bx + 18,
+    s1: bx + 100,
+    s2: bx + 134,
+    s3: bx + 168,
+    games: bx + 212,
+    points: bx + 278,
+  };
+
+  ctx.font = "bold 9px 'Courier New', monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = labelColor;
+  ctx.fillText("S1", cols.s1 + 17, hdrY + 10);
+  ctx.fillText("S2", cols.s2 + 17, hdrY + 10);
+  ctx.fillText("S3", cols.s3 + 17, hdrY + 10);
+  ctx.fillText("GAMES", cols.games + 28, hdrY + 10);
+  ctx.fillText("POINTS", cols.points + 34, hdrY + 10);
+
+  // Header divider
+  ctx.strokeStyle = dividerColor;
+  ctx.beginPath();
+  ctx.moveTo(bx, hdrY + headerH);
+  ctx.lineTo(bx + boardW, hdrY + headerH);
+  ctx.stroke();
+
+  // ===== PLAYER ROWS =====
+  const players = [
+    { name: "YOU", serving: score.serving === "player", games: score.playerGames, pts: getPointsDisplay("player") },
+    { name: "CPU", serving: score.serving === "cpu", games: score.cpuGames, pts: getPointsDisplay("cpu") },
+  ];
+
+  for (let r = 0; r < 2; r++) {
+    const p = players[r];
+    const ry = hdrY + headerH + r * rowH;
+
+    // Row background
+    ctx.fillStyle = r === 0 ? boardBg : boardBgLight;
+    ctx.fillRect(bx, ry, boardW, rowH);
+
+    // Serving indicator - small yellow dot
+    if (p.serving) {
+      ctx.fillStyle = digitOn;
+      ctx.beginPath();
+      ctx.arc(cols.serv + 5, ry + rowH / 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Player name in yellow
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.textAlign = "left";
+    ctx.fillStyle = digitOn;
+    ctx.fillText(p.name, cols.name, ry + rowH / 2 + 5);
+
+    // Digit sizing for scores
+    const dw = 10;
+    const dh = 15;
+    const sp = 2;
+    const dcy = ry + rowH / 2;
+
+    // Set scores (S1, S2, S3)
+    const setCols = [cols.s1, cols.s2, cols.s3];
+    for (let s = 0; s < 3; s++) {
+      if (s <= score.currentSet) {
+        if (s === score.currentSet) {
+          ctx.fillStyle = "rgba(232, 212, 77, 0.08)";
+          ctx.fillRect(setCols[s], ry, 34, rowH);
+        }
+        const val = String(p.games[s]);
+        drawSegmentText(setCols[s] + 10, dcy, val, dw, dh, sp, digitOn, digitOff);
+      } else {
+        drawSegmentText(setCols[s] + 10, dcy, "-", dw, dh, sp, "#2a4a35", digitOff);
+      }
+    }
+
+    // Current games in set (larger)
+    const gamesStr = String(p.games[score.currentSet]);
+    drawSegmentText(cols.games + 16, dcy, gamesStr, 12, 17, 2, digitOn, digitOff);
+
+    // Points (largest, brightest)
+    const ptsStr = p.pts;
+    if (ptsStr === "AD") {
+      ctx.font = "bold 15px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ff8844";
+      ctx.fillText("AD", cols.points + 34, ry + rowH / 2 + 5);
+    } else {
+      const ptsFormatted = ptsStr.length === 1 ? " " + ptsStr : ptsStr;
+      drawSegmentText(cols.points + 16, dcy, ptsFormatted, 13, 18, 2, "#ffffff", digitOff);
+    }
+
+    // Row divider
+    if (r === 0) {
+      ctx.strokeStyle = dividerColor;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bx, ry + rowH);
+      ctx.lineTo(bx + boardW, ry + rowH);
+      ctx.stroke();
+    }
+  }
+
+  // Vertical dividers between columns
+  ctx.strokeStyle = "rgba(42, 90, 58, 0.6)";
+  ctx.lineWidth = 0.5;
+  const vDividers = [cols.s1 - 2, cols.s2 - 2, cols.s3 - 2, cols.games - 4, cols.points - 4];
+  const vTop = hdrY;
+  const vBot = hdrY + headerH + rowH * 2;
+  for (const vx of vDividers) {
+    ctx.beginPath();
+    ctx.moveTo(vx, vTop);
+    ctx.lineTo(vx, vBot);
+    ctx.stroke();
+  }
+
+  // Tiebreak indicator
+  if (score.tiebreak) {
+    ctx.font = "bold 9px 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ff8844";
+    ctx.fillText("TIEBREAK", bx + boardW / 2, by + boardH + 11);
+  }
+
+  // Reset letterSpacing so it doesn't bleed into other drawing
+  ctx.letterSpacing = "0px";
+}
+
+function getPointsDisplay(who) {
+  if (score.tiebreak) {
+    return who === "player" ? String(score.tiebreakPlayerPoints) : String(score.tiebreakCpuPoints);
+  }
+  const pp = score.playerPoints;
+  const cp = score.cpuPoints;
+  const pts = who === "player" ? pp : cp;
+  const other = who === "player" ? cp : pp;
+  if (pp >= 3 && cp >= 3) {
+    if (pp === cp) return "40";
+    if (pts > other) return "AD";
+    return "40";
+  }
+  return ["0", "15", "30", "40"][Math.min(pts, 3)];
+}
+
+function padScore(s) {
+  while (s.length < 3) s = " " + s;
+  return s;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawQuestionOverlay() {
+  if (!currentQuestion) return;
+
+  // Reset any scoreboard font state that could bleed through
+  ctx.letterSpacing = "0px";
+
+  // Dark backdrop
+  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  const cardX = 100;
+  const cardY = 100;
+  const cardW = 600;
+  const cardH = 400;
+
+  // Card background
+  ctx.fillStyle = "#f5f5f5";
+  roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 2;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+  ctx.stroke();
+
+  // Category label
+  const catColors = { Python: "#3776AB", JavaScript: "#F7DF1E", "HTML/CSS": "#E44D26", SQL: "#336791", General: "#6c757d" };
+  const catColor = catColors[currentQuestion.category] || "#666";
+  ctx.fillStyle = catColor;
+  roundRect(ctx, cardX + 20, cardY + 15, currentQuestion.category.length * 11 + 20, 28, 6);
+  ctx.fill();
+  ctx.fillStyle = currentQuestion.category === "JavaScript" ? "#333" : "#fff";
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(currentQuestion.category, cardX + 30, cardY + 34);
+
+  // Question text
+  ctx.fillStyle = "#222";
+  ctx.font = "18px Arial";
+  ctx.textAlign = "center";
+  wrapText(ctx, currentQuestion.question, COURT_CENTER_X, cardY + 80, cardW - 60, 24);
+
+  // Answer buttons
+  const btnW = 260;
+  const btnH = 48;
+  const btnStartY = cardY + 160;
+  const labels = ["A", "B", "C", "D"];
+  for (let i = 0; i < 4; i++) {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const bx = cardX + 30 + col * (btnW + 20);
+    const by = btnStartY + row * (btnH + 12);
+
+    // Button background
+    let btnColor = "#e8e8e8";
+    if (questionAnswered) {
+      if (i === currentQuestion.answer) btnColor = "#4CAF50";
+      else if (i === clickedAnswer && i !== currentQuestion.answer) btnColor = "#f44336";
+    }
+    ctx.fillStyle = btnColor;
+    roundRect(ctx, bx, by, btnW, btnH, 8);
+    ctx.fill();
+    ctx.strokeStyle = "#bbb";
+    ctx.lineWidth = 1;
+    roundRect(ctx, bx, by, btnW, btnH, 8);
+    ctx.stroke();
+
+    // Label circle
+    ctx.fillStyle = questionAnswered && i === currentQuestion.answer ? "#2E7D32" : "#666";
+    ctx.beginPath();
+    ctx.arc(bx + 22, by + btnH / 2, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(labels[i], bx + 22, by + btnH / 2 + 5);
+
+    // Choice text
+    ctx.fillStyle = questionAnswered ? "#fff" : "#333";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "left";
+    const choiceText = currentQuestion.choices[i];
+    ctx.fillText(choiceText.length > 30 ? choiceText.substring(0, 28) + "..." : choiceText, bx + 44, by + btnH / 2 + 5);
+  }
+
+  // Keyboard hint
+  ctx.fillStyle = "#999";
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Press 1-4 or click to answer", COURT_CENTER_X, cardY + cardH - 55);
+
+  // Timer bar
+  const timerFraction = Math.max(0, questionTimer / (QUESTION_TIME_LIMIT * 60));
+  const timerBarW = cardW - 60;
+  const timerBarH = 12;
+  const timerBarX = cardX + 30;
+  const timerBarY = cardY + cardH - 35;
+
+  // Timer background
+  ctx.fillStyle = "#ddd";
+  roundRect(ctx, timerBarX, timerBarY, timerBarW, timerBarH, 6);
+  ctx.fill();
+
+  // Timer fill
+  let timerColor;
+  if (timerFraction > 0.5) timerColor = "#4CAF50";
+  else if (timerFraction > 0.25) timerColor = "#FFC107";
+  else timerColor = "#f44336";
+  ctx.fillStyle = timerColor;
+  roundRect(ctx, timerBarX, timerBarY, timerBarW * timerFraction, timerBarH, 6);
+  ctx.fill();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  for (const word of words) {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      ctx.fillText(line.trim(), x, y);
+      line = word + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, y);
+}
+
+function drawTitleScreen() {
+  ctx.fillStyle = "#1a1a2e";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Draw a mini court in background
+  drawCourt();
+
+  // Overlay
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Title
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Tennis Algorithm Game", COURT_CENTER_X, 200);
+
+  // Subtitle
+  ctx.fillStyle = "#aaa";
+  ctx.font = "20px Arial";
+  ctx.fillText("Solve coding questions to unlock your racket!", COURT_CENTER_X, 250);
+
+  // Tennis ball icon
+  const pulse = Math.sin(Date.now() / 300) * 5;
+  ctx.fillStyle = "#ccdd00";
+  ctx.beginPath();
+  ctx.arc(COURT_CENTER_X, 320 + pulse, 20, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#99aa00";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Start prompt
+  const alpha = 0.5 + Math.sin(Date.now() / 500) * 0.5;
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+  ctx.font = "24px Arial";
+  ctx.fillText("Press SPACE to start", COURT_CENTER_X, 420);
+
+  // Instructions
+  ctx.fillStyle = "#888";
+  ctx.font = "14px Arial";
+  ctx.fillText("← → or A/D to move  |  SPACE to serve  |  1-4 to answer questions", COURT_CENTER_X, 480);
+}
+
+function drawPointMessage() {
+  // Dark backdrop always visible while in POINT_SCORED state
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // Point message fades but stays readable
+  const msgAlpha = pointMessageTimer > 0 ? Math.min(1, pointMessageTimer / 30) : 0.6;
+  ctx.fillStyle = `rgba(255, 255, 255, ${msgAlpha})`;
+  ctx.font = "bold 36px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(pointMessage, COURT_CENTER_X, CANVAS_HEIGHT / 2 - 20);
+
+  // "Press SPACE" prompt always stays fully visible
+  const pulseAlpha = 0.6 + Math.sin(Date.now() / 400) * 0.4;
+  ctx.font = "20px Arial";
+  ctx.fillStyle = `rgba(200, 200, 200, ${pulseAlpha})`;
+  ctx.fillText("Press SPACE to continue", COURT_CENTER_X, CANVAS_HEIGHT / 2 + 30);
+}
+
+function drawQuestionResult() {
+  if (questionResultTimer <= 0 || !questionResult) return;
+  const alpha = Math.min(1, questionResultTimer / 20);
+  let color, text;
+  if (questionResult === "correct") {
+    color = `rgba(76, 175, 80, ${alpha})`;
+    text = "Correct! Racket Unlocked!";
+  } else if (questionResult === "wrong") {
+    color = `rgba(244, 67, 54, ${alpha})`;
+    text = "Wrong!";
+  } else if (questionResult === "timeout") {
+    color = `rgba(255, 152, 0, ${alpha})`;
+    text = "Time's Up!";
+  } else {
+    return;
+  }
+  ctx.fillStyle = color;
+  ctx.font = "bold 32px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(text, COURT_CENTER_X, CANVAS_HEIGHT / 2 - 60);
+}
+
+function drawGameOver() {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  ctx.fillStyle = score.matchWinner === "player" ? "#4CAF50" : "#f44336";
+  ctx.font = "bold 48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(score.matchWinner === "player" ? "YOU WIN!" : "CPU WINS!", COURT_CENTER_X, 220);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "24px Arial";
+  const setsText = "Sets: " + score.playerSets + " - " + score.cpuSets;
+  ctx.fillText(setsText, COURT_CENTER_X, 280);
+
+  // Show all set scores
+  ctx.font = "18px Arial";
+  ctx.fillStyle = "#ccc";
+  for (let i = 0; i <= score.currentSet && i < 3; i++) {
+    ctx.fillText("Set " + (i + 1) + ": " + score.playerGames[i] + " - " + score.cpuGames[i], COURT_CENTER_X, 320 + i * 30);
+  }
+
+  const alpha = 0.5 + Math.sin(Date.now() / 500) * 0.5;
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+  ctx.font = "20px Arial";
+  ctx.fillText("Press SPACE to play again", COURT_CENTER_X, 450);
+}
+
+// ===== GAME LOGIC =====
+function shuffleQuestions() {
+  questionQueue = [...QUESTIONS];
+  for (let i = questionQueue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [questionQueue[i], questionQueue[j]] = [questionQueue[j], questionQueue[i]];
+  }
+}
+
+function getNextQuestion() {
+  if (questionQueue.length === 0) shuffleQuestions();
+  return questionQueue.pop();
+}
+
+function serveBall() {
+  ball.x = player.x;
+  ball.depth = 0.05;
+  ball.dx = (Math.random() - 0.5) * 0.3;
+  ball.dDepth = ball.speed;
+  ball.visible = true;
+  rallyCount = 0;
+  player.locked = false;
+  questionCheckedThisRally = false;
+}
+
+function updateBall(slowMotion) {
+  const speedMult = slowMotion ? SLOW_MOTION_FACTOR : 1.0;
+  // Perspective speed: ball moves faster through the compressed CPU half
+  // and slower through the wider player half, giving more reaction time
+  // depth 0 (player): factor ~0.5, depth 0.5 (net): ~1.0, depth 1.0 (CPU): ~1.5
+  const perspectiveFactor = 0.5 + ball.depth;
+  ball.x += ball.dx * speedMult * perspectiveFactor;
+  ball.depth += ball.dDepth * speedMult * perspectiveFactor;
+
+  // Clamp depth
+  if (ball.depth < 0) ball.depth = 0;
+  if (ball.depth > 1) ball.depth = 1;
+}
+
+function checkBallOut() {
+  // Check if ball is past sidelines
+  if (ball.x < -5 || ball.x > 105) {
+    return true;
+  }
+  return false;
+}
+
+function updateCPU() {
+  // Tracking with error
+  if (Math.random() < 0.02) {
+    cpu.error = (Math.random() - 0.5) * (1 - CPU_SKILL) * 40;
+  }
+  cpu.targetX = ball.x + cpu.error;
+
+  const diff = cpu.targetX - cpu.x;
+  const maxStep = cpu.speed;
+  if (Math.abs(diff) > maxStep) {
+    cpu.x += Math.sign(diff) * maxStep;
+  } else {
+    cpu.x = cpu.targetX;
+  }
+  cpu.x = Math.max(5, Math.min(95, cpu.x));
+}
+
+function cpuHitBall() {
+  ball.dDepth = -ball.speed * (1 + rallyCount * 0.02);
+  // aim toward center with slight random spread to stay in bounds
+  const centerPull = (50 - ball.x) * 0.012;
+  ball.dx = centerPull + (Math.random() - 0.5) * 0.2;
+  rallyCount++;
+}
+
+function playerHitBall() {
+  ball.dDepth = ball.speed * (1 + rallyCount * 0.02);
+  // aim based on racket offset, clamped to stay in bounds
+  const aimOffset = (player.x - ball.x) * 0.04;
+  ball.dx = aimOffset + (Math.random() - 0.5) * 0.15;
+  rallyCount++;
+  questionCheckedThisRally = false;
+}
+
+function updatePlayerMovement() {
+  if (keys["ArrowLeft"] || keys["KeyA"]) {
+    player.x -= player.speed;
+  }
+  if (keys["ArrowRight"] || keys["KeyD"]) {
+    player.x += player.speed;
+  }
+  player.x = Math.max(5, Math.min(95, player.x));
+}
+
+function awardPoint(winner) {
+  if (score.tiebreak) {
+    if (winner === "player") score.tiebreakPlayerPoints++;
+    else score.tiebreakCpuPoints++;
+
+    const pp = score.tiebreakPlayerPoints;
+    const cp = score.tiebreakCpuPoints;
+    if ((pp >= 7 || cp >= 7) && Math.abs(pp - cp) >= 2) {
+      awardGame(pp > cp ? "player" : "cpu");
+      return;
+    }
+    // Switch serve every 2 points in tiebreak (after first point)
+    const totalPoints = pp + cp;
+    if (totalPoints === 1 || (totalPoints > 1 && (totalPoints - 1) % 2 === 0)) {
+      score.serving = score.serving === "player" ? "cpu" : "player";
+    }
+  } else {
+    if (winner === "player") score.playerPoints++;
+    else score.cpuPoints++;
+
+    const pp = score.playerPoints;
+    const cp = score.cpuPoints;
+
+    // Check for game win
+    if (pp >= 4 || cp >= 4) {
+      if (pp >= 4 && pp - cp >= 2) { awardGame("player"); return; }
+      if (cp >= 4 && cp - pp >= 2) { awardGame("cpu"); return; }
+    }
+  }
+}
+
+function awardGame(winner) {
+  const s = score.currentSet;
+  if (winner === "player") score.playerGames[s]++;
+  else score.cpuGames[s]++;
+
+  // Reset points
+  score.playerPoints = 0;
+  score.cpuPoints = 0;
+  score.tiebreakPlayerPoints = 0;
+  score.tiebreakCpuPoints = 0;
+  score.tiebreak = false;
+
+  // Switch serve
+  score.serving = score.serving === "player" ? "cpu" : "player";
+
+  const pg = score.playerGames[s];
+  const cg = score.cpuGames[s];
+
+  // Check for set win
+  if ((pg >= 6 || cg >= 6) && Math.abs(pg - cg) >= 2) {
+    awardSet(pg > cg ? "player" : "cpu");
+    return;
+  }
+  // Tiebreak at 6-6
+  if (pg === 6 && cg === 6) {
+    score.tiebreak = true;
+  }
+}
+
+function awardSet(winner) {
+  if (winner === "player") score.playerSets++;
+  else score.cpuSets++;
+
+  // Check for match win (best of 3)
+  if (score.playerSets >= 2) {
+    score.matchOver = true;
+    score.matchWinner = "player";
+    gameState = STATES.GAME_OVER;
+    return;
+  }
+  if (score.cpuSets >= 2) {
+    score.matchOver = true;
+    score.matchWinner = "cpu";
+    gameState = STATES.GAME_OVER;
+    return;
+  }
+
+  score.currentSet++;
+}
+
+function resetMatch() {
+  score.playerPoints = 0;
+  score.cpuPoints = 0;
+  score.playerGames = [0, 0, 0];
+  score.cpuGames = [0, 0, 0];
+  score.currentSet = 0;
+  score.playerSets = 0;
+  score.cpuSets = 0;
+  score.serving = "player";
+  score.tiebreak = false;
+  score.tiebreakPlayerPoints = 0;
+  score.tiebreakCpuPoints = 0;
+  score.matchOver = false;
+  score.matchWinner = "";
+  player.x = 50;
+  player.locked = false;
+  cpu.x = 50;
+  ball.speed = BALL_BASE_SPEED;
+  rallyCount = 0;
+  shuffleQuestions();
+}
+
+function handleAnswer(index) {
+  if (questionAnswered || !currentQuestion) return;
+  questionAnswered = true;
+  clickedAnswer = index;
+
+  if (index === currentQuestion.answer) {
+    questionResult = "correct";
+    questionResultTimer = 60;
+    player.locked = false;
+    player.unlockFlash = 1.0;
+    // Delay before closing overlay
+    setTimeout(() => {
+      currentQuestion = null;
+      gameState = STATES.BALL_TO_PLAYER;
+    }, 600);
+  } else {
+    questionResult = "wrong";
+    questionResultTimer = 90;
+    setTimeout(() => {
+      currentQuestion = null;
+      pointMessage = "Point: CPU";
+      pointMessageTimer = 120;
+      awardPoint("cpu");
+      if (!score.matchOver) {
+        gameState = STATES.POINT_SCORED;
+      }
+    }, 800);
+  }
+}
+
+function handleTimeout() {
+  questionAnswered = true;
+  questionResult = "timeout";
+  questionResultTimer = 90;
+  setTimeout(() => {
+    currentQuestion = null;
+    pointMessage = "Point: CPU (Time's Up!)";
+    pointMessageTimer = 120;
+    awardPoint("cpu");
+    if (!score.matchOver) {
+      gameState = STATES.POINT_SCORED;
+    }
+  }, 800);
+}
+
+// ===== INPUT HANDLING =====
+document.addEventListener("keydown", (e) => {
+  keys[e.code] = true;
+
+  if (gameState === STATES.TITLE && e.code === "Space") {
+    e.preventDefault();
+    gameState = STATES.SERVING;
+    return;
+  }
+
+  if (gameState === STATES.GAME_OVER && e.code === "Space") {
+    e.preventDefault();
+    resetMatch();
+    gameState = STATES.TITLE;
+    return;
+  }
+
+  if (gameState === STATES.SERVING && e.code === "Space") {
+    e.preventDefault();
+    serveBall();
+    gameState = STATES.BALL_TO_CPU;
+    return;
+  }
+
+  if (gameState === STATES.POINT_SCORED && e.code === "Space") {
+    e.preventDefault();
+    if (score.matchOver) {
+      gameState = STATES.GAME_OVER;
+    } else {
+      gameState = STATES.SERVING;
+    }
+    return;
+  }
+
+  if (gameState === STATES.QUESTION_TIME && !questionAnswered) {
+    if (e.code === "Digit1" || e.code === "Numpad1") handleAnswer(0);
+    else if (e.code === "Digit2" || e.code === "Numpad2") handleAnswer(1);
+    else if (e.code === "Digit3" || e.code === "Numpad3") handleAnswer(2);
+    else if (e.code === "Digit4" || e.code === "Numpad4") handleAnswer(3);
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  keys[e.code] = false;
+});
+
+canvas.addEventListener("click", (e) => {
+  if (gameState !== STATES.QUESTION_TIME || questionAnswered || !currentQuestion) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CANVAS_WIDTH / rect.width;
+  const scaleY = CANVAS_HEIGHT / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  const cardX = 100;
+  const cardY = 100;
+  const btnW = 260;
+  const btnH = 48;
+  const btnStartY = cardY + 160;
+
+  for (let i = 0; i < 4; i++) {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const bx = cardX + 30 + col * (btnW + 20);
+    const by = btnStartY + row * (btnH + 12);
+    if (mx >= bx && mx <= bx + btnW && my >= by && my <= by + btnH) {
+      handleAnswer(i);
+      break;
+    }
+  }
+});
+
+// ===== GAME LOOP =====
+function gameLoop() {
+  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  switch (gameState) {
+    case STATES.TITLE:
+      drawTitleScreen();
+      break;
+
+    case STATES.SERVING:
+      drawCourt();
+      drawCPURacket();
+      updatePlayerMovement();
+      drawPlayerRacket();
+      drawScoreboard();
+
+      // Show serve prompt
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.font = "20px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Press SPACE to serve", COURT_CENTER_X, CANVAS_HEIGHT / 2 + 60);
+      break;
+
+    case STATES.BALL_TO_CPU:
+      updatePlayerMovement();
+      updateBall(false);
+      updateCPU();
+
+      // Check if ball out of bounds
+      if (checkBallOut()) {
+        pointMessage = "OUT! Point: CPU";
+        pointMessageTimer = 90;
+        awardPoint("cpu");
+        gameState = STATES.POINT_SCORED;
+        break;
+      }
+
+      // Ball reached CPU side
+      if (ball.depth >= 0.92) {
+        // Check if CPU racket can hit
+        const hitDist = Math.abs(ball.x - cpu.x);
+        if (hitDist < 15) {
+          cpuHitBall();
+          // Decide now whether a question triggers on this return
+          if (!questionCheckedThisRally && Math.random() < QUESTION_CHANCE) {
+            questionCheckedThisRally = true;
+            player.locked = true;
+            currentQuestion = getNextQuestion();
+            questionTimer = QUESTION_TIME_LIMIT * 60;
+            questionAnswered = false;
+            questionResult = "";
+            questionResultTimer = 0;
+            clickedAnswer = -1;
+            gameState = STATES.QUESTION_TIME;
+          } else {
+            questionCheckedThisRally = true;
+            gameState = STATES.BALL_TO_PLAYER;
+          }
+        } else {
+          // CPU missed
+          pointMessage = "ACE! Point: YOU";
+          pointMessageTimer = 90;
+          awardPoint("player");
+          gameState = STATES.POINT_SCORED;
+        }
+      }
+
+      drawCourt();
+      drawBall();
+      drawCPURacket();
+      drawPlayerRacket();
+      drawScoreboard();
+      break;
+
+    case STATES.BALL_TO_PLAYER:
+      updatePlayerMovement();
+      updateBall(false);
+      updateCPU();
+
+      // Check if ball out of bounds
+      if (checkBallOut()) {
+        pointMessage = "OUT! Point: YOU";
+        pointMessageTimer = 90;
+        awardPoint("player");
+        gameState = STATES.POINT_SCORED;
+        break;
+      }
+
+      // Ball reached player side
+      if (ball.depth <= 0.08) {
+        const hitDist = Math.abs(ball.x - player.x);
+        if (!player.locked && hitDist < 18) {
+          playerHitBall();
+          gameState = STATES.BALL_TO_CPU;
+        } else {
+          pointMessage = player.locked ? "Racket Locked! Point: CPU" : "MISS! Point: CPU";
+          pointMessageTimer = 90;
+          awardPoint("cpu");
+          gameState = STATES.POINT_SCORED;
+        }
+      }
+
+      drawCourt();
+      drawBall();
+      drawCPURacket();
+      drawPlayerRacket();
+      drawScoreboard();
+      break;
+
+    case STATES.QUESTION_TIME:
+      updatePlayerMovement();
+      // freeze ball while question is active (no drift/teleport)
+      updateCPU();
+
+      if (!questionAnswered) {
+        questionTimer--;
+        if (questionTimer <= 0) {
+          handleTimeout();
+        }
+      }
+
+      drawCourt();
+      drawBall();
+      drawCPURacket();
+      drawPlayerRacket();
+      drawScoreboard();
+      drawQuestionOverlay();
+      drawQuestionResult();
+      break;
+
+    case STATES.POINT_SCORED:
+      drawCourt();
+      drawCPURacket();
+      drawPlayerRacket();
+      drawScoreboard();
+      drawPointMessage();
+
+      if (pointMessageTimer > 0) {
+        pointMessageTimer--;
+      }
+      break;
+
+    case STATES.GAME_OVER:
+      drawCourt();
+      drawScoreboard();
+      drawGameOver();
+      break;
+  }
+
+  if (questionResultTimer > 0) questionResultTimer--;
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ===== INITIALIZATION =====
+shuffleQuestions();
+gameLoop();
+</script>
+</body>
+</html>
