@@ -1,36 +1,40 @@
 # Tennis Algorithm Game
 
-A single-file browser tennis game with fake 3D perspective where the player must solve programming multiple-choice questions to unlock their racket and return the ball. Designed as a study tool for students learning Python, JavaScript, HTML/CSS, SQL, and general computer science concepts.
+A tennis game you play in your web browser. Answer programming questions to unlock your racket and hit the ball back. No install needed - just one file.
 
 ![Title screen](screenshot.png)
 
-## Quick start
+## How to play
 
-Open `tennis_game.html` directly in any modern browser (`File > Open` or double-click). No server, build step, or internet connection required.
+1. Download `tennis_game.html` (click the file above, then click the download button).
+2. Open it in any web browser (Chrome, Firefox, Safari, Edge).
+3. Press SPACE to start.
 
-- Arrow keys or A/D: move racket
-- SPACE: serve the ball
-- 1/2/3/4 or click: answer questions
+## Controls
 
-## Testing
+- **Arrow keys** or **A/D**: move your racket left and right
+- **SPACE**: serve the ball
+- **1/2/3/4** or **click**: answer questions
 
-```bash
-python3 -m pytest tests/test_tennis_game_smoke.py -v
-```
+## Rules
 
-## Documentation
+- The CPU hits the ball toward you.
+- A programming question pops up - answer it correctly to unlock your racket.
+- If you get it wrong or run out of time, the CPU scores a point.
+- Full tennis scoring: points, games, sets. Best of 3 sets wins the match.
 
-- [docs/PLAN.md](docs/PLAN.md): original design and implementation plan.
-- [docs/CHANGELOG.md](docs/CHANGELOG.md): chronological record of changes.
-- [docs/AUTHORS.md](docs/AUTHORS.md): primary maintainers and contributors.
-- [docs/REPO_STYLE.md](docs/REPO_STYLE.md): repo-wide conventions and file placement rules.
-- [docs/PYTHON_STYLE.md](docs/PYTHON_STYLE.md): Python formatting and linting conventions.
-- [docs/MARKDOWN_STYLE.md](docs/MARKDOWN_STYLE.md): Markdown writing rules for this repo.
+## Question categories
+
+- Python
+- JavaScript
+- HTML/CSS
+- SQL
+- General computer science
 
 ## License
 
 MIT. See [LICENSE](LICENSE) for details.
 
-## Maintainer
+## Author
 
 Neil Voss - https://bsky.app/profile/neilvosslab.bsky.social
