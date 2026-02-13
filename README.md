@@ -2,6 +2,8 @@
 
 A single-file browser tennis game with fake 3D perspective where the player must solve programming multiple-choice questions to unlock their racket and return the ball. Designed as a study tool for students learning Python, JavaScript, HTML/CSS, SQL, and general computer science concepts.
 
+![Title screen](screenshot.png)
+
 ## Quick start
 
 Open `tennis_game.html` directly in any modern browser (`File > Open` or double-click). No server, build step, or internet connection required.
