@@ -260,6 +260,16 @@ function drawCourt() {
     ctx.fillStyle = "#888";
     ctx.fillRect(post.x - 3, post.y - 10, 6, 20);
   }
+
+  // Right panel background (scoreboard area)
+  ctx.fillStyle = "#0a1a10";
+  ctx.fillRect(COURT_AREA_WIDTH, 0, CANVAS_WIDTH - COURT_AREA_WIDTH, CANVAS_HEIGHT);
+  ctx.strokeStyle = "#1a4a2a";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(COURT_AREA_WIDTH, 0);
+  ctx.lineTo(COURT_AREA_WIDTH, CANVAS_HEIGHT);
+  ctx.stroke();
 }
 
 function drawBall() {
@@ -493,14 +503,19 @@ function drawSegmentText(x, cy, text, digitW, digitH, spacing, onColor, offColor
 }
 
 function drawScoreboard() {
-  // Classic Wimbledon scoreboard - compact, positioned top-left to avoid CPU
-  const boardW = 350;
-  const clockBarH = 26;
-  const headerH = 14;
-  const rowH = 24;
+  // Wimbledon scoreboard in right panel
+  // Columns left-to-right: Previous Sets | Name | Sets | Games | Points
+  const panelX = COURT_AREA_WIDTH;
+  const panelW = CANVAS_WIDTH - COURT_AREA_WIDTH;
+  const margin = 8;
+  const bx = panelX + margin;
+  const boardW = panelW - margin * 2;
+
+  const clockBarH = 38;
+  const headerH = 18;
+  const rowH = 36;
   const boardH = clockBarH + headerH + rowH * 2;
-  const bx = 8;
-  const by = 4;
+  const by = 20;
 
   // Colors matching the real Wimbledon board
   const boardBg = "#0a2e1a";
@@ -514,7 +529,7 @@ function drawScoreboard() {
   // Reset letterSpacing before any text drawing
   ctx.letterSpacing = "0px";
 
-  // Outer frame
+  // Outer frame shadow
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.6)";
   ctx.shadowBlur = 10;
@@ -532,26 +547,19 @@ function drawScoreboard() {
   ctx.fillStyle = "#061a0e";
   ctx.fillRect(bx, by, boardW, clockBarH);
 
-  // Clock time (real browser time) - LEFT side, larger digits
+  // XELOR brand text
+  ctx.font = "bold 10px 'Courier New', monospace";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#d4d4c8";
+  ctx.letterSpacing = "3px";
+  ctx.fillText("XELOR", bx + boardW / 2, by + 14);
+  ctx.letterSpacing = "0px";
+
+  // Clock time (real browser time) - centered below brand
   const now = new Date();
   const hrs = String(now.getHours()).padStart(2, "0");
   const mins = String(now.getMinutes()).padStart(2, "0");
-  const clockY = by + clockBarH / 2 + 1;
-  drawSegmentText(bx + 12, clockY, hrs + ":" + mins, 10, 16, 2, digitOn, digitOff);
-
-  // XELOR brand text - centered
-  ctx.font = "bold 12px 'Courier New', monospace";
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#d4d4c8";
-  ctx.letterSpacing = "4px";
-  ctx.fillText("XELOR", bx + boardW / 2, by + 17);
-  ctx.letterSpacing = "0px";
-
-  // Rally count on right side of clock bar
-  if (rallyCount > 0) {
-    const rallyStr = String(rallyCount).padStart(2, "0");
-    drawSegmentText(bx + boardW - 40, clockY, rallyStr, 10, 16, 2, "#88aa66", digitOff);
-  }
+  drawSegmentText(bx + boardW / 2 - 28, by + 30, hrs + ":" + mins, 8, 13, 2, digitOn, digitOff);
 
   // Clock bar divider
   ctx.strokeStyle = dividerColor;
@@ -561,30 +569,32 @@ function drawScoreboard() {
   ctx.lineTo(bx + boardW, by + clockBarH);
   ctx.stroke();
 
-  // ===== COLUMN HEADER ROW =====
+  // ===== COLUMN POSITIONS =====
+  // Layout: S1 | S2 | S3 | NAME | SETS | GAMES | POINTS
+  const cols = {
+    s1: bx + 2,
+    s2: bx + 24,
+    s3: bx + 46,
+    name: bx + 70,
+    sets: bx + 134,
+    games: bx + 164,
+    points: bx + 200,
+  };
+
+  // ===== HEADER ROW =====
   const hdrY = by + clockBarH;
   ctx.fillStyle = boardBg;
   ctx.fillRect(bx, hdrY, boardW, headerH);
 
-  // Column layout for 350px wide board
-  const cols = {
-    serv: bx + 4,
-    name: bx + 18,
-    s1: bx + 100,
-    s2: bx + 134,
-    s3: bx + 168,
-    games: bx + 212,
-    points: bx + 278,
-  };
-
-  ctx.font = "bold 9px 'Courier New', monospace";
+  ctx.font = "bold 8px 'Courier New', monospace";
   ctx.textAlign = "center";
   ctx.fillStyle = labelColor;
-  ctx.fillText("S1", cols.s1 + 17, hdrY + 10);
-  ctx.fillText("S2", cols.s2 + 17, hdrY + 10);
-  ctx.fillText("S3", cols.s3 + 17, hdrY + 10);
-  ctx.fillText("GAMES", cols.games + 28, hdrY + 10);
-  ctx.fillText("POINTS", cols.points + 34, hdrY + 10);
+  ctx.fillText("1", cols.s1 + 10, hdrY + 12);
+  ctx.fillText("2", cols.s2 + 10, hdrY + 12);
+  ctx.fillText("3", cols.s3 + 10, hdrY + 12);
+  ctx.fillText("SETS", cols.sets + 14, hdrY + 12);
+  ctx.fillText("GAME", cols.games + 16, hdrY + 12);
+  ctx.fillText("PTS", cols.points + 22, hdrY + 12);
 
   // Header divider
   ctx.strokeStyle = dividerColor;
@@ -607,55 +617,59 @@ function drawScoreboard() {
     ctx.fillStyle = r === 0 ? boardBg : boardBgLight;
     ctx.fillRect(bx, ry, boardW, rowH);
 
-    // Serving indicator - small yellow dot
-    if (p.serving) {
-      ctx.fillStyle = digitOn;
-      ctx.beginPath();
-      ctx.arc(cols.serv + 5, ry + rowH / 2, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Player name in yellow
-    ctx.font = "bold 13px 'Courier New', monospace";
-    ctx.textAlign = "left";
-    ctx.fillStyle = digitOn;
-    ctx.fillText(p.name, cols.name, ry + rowH / 2 + 5);
-
-    // Digit sizing for scores
-    const dw = 10;
-    const dh = 15;
-    const sp = 2;
     const dcy = ry + rowH / 2;
+    const dw = 8;
+    const dh = 13;
+    const sp = 1;
 
-    // Set scores (S1, S2, S3)
+    // Previous set scores (S1, S2, S3)
     const setCols = [cols.s1, cols.s2, cols.s3];
     for (let s = 0; s < 3; s++) {
-      if (s <= score.currentSet) {
-        if (s === score.currentSet) {
-          ctx.fillStyle = "rgba(232, 212, 77, 0.08)";
-          ctx.fillRect(setCols[s], ry, 34, rowH);
-        }
+      if (s < score.currentSet) {
+        // Completed set - show final games won
         const val = String(p.games[s]);
-        drawSegmentText(setCols[s] + 10, dcy, val, dw, dh, sp, digitOn, digitOff);
+        drawSegmentText(setCols[s] + 5, dcy, val, dw, dh, sp, digitOn, digitOff);
+      } else if (s === score.currentSet) {
+        // Current set - subtle highlight
+        ctx.fillStyle = "rgba(232, 212, 77, 0.08)";
+        ctx.fillRect(setCols[s], ry, 22, rowH);
+        const val = String(p.games[s]);
+        drawSegmentText(setCols[s] + 5, dcy, val, dw, dh, sp, digitOn, digitOff);
       } else {
-        drawSegmentText(setCols[s] + 10, dcy, "-", dw, dh, sp, "#2a4a35", digitOff);
+        drawSegmentText(setCols[s] + 5, dcy, "-", dw, dh, sp, "#2a4a35", digitOff);
       }
     }
 
-    // Current games in set (larger)
-    const gamesStr = String(p.games[score.currentSet]);
-    drawSegmentText(cols.games + 16, dcy, gamesStr, 12, 17, 2, digitOn, digitOff);
+    // Player name with serving dot
+    if (p.serving) {
+      ctx.fillStyle = digitOn;
+      ctx.beginPath();
+      ctx.arc(cols.name + 4, dcy, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.font = "bold 12px 'Courier New', monospace";
+    ctx.textAlign = "left";
+    ctx.fillStyle = digitOn;
+    ctx.fillText(p.name, cols.name + 12, dcy + 4);
 
-    // Points (largest, brightest)
+    // Sets won
+    const setsWon = r === 0 ? String(score.playerSets) : String(score.cpuSets);
+    drawSegmentText(cols.sets + 7, dcy, setsWon, 10, 15, 2, digitOn, digitOff);
+
+    // Games in current set
+    const gamesStr = String(p.games[score.currentSet]);
+    drawSegmentText(cols.games + 7, dcy, gamesStr, 10, 15, 2, digitOn, digitOff);
+
+    // Points (brightest)
     const ptsStr = p.pts;
     if (ptsStr === "AD") {
-      ctx.font = "bold 15px 'Courier New', monospace";
+      ctx.font = "bold 13px 'Courier New', monospace";
       ctx.textAlign = "center";
       ctx.fillStyle = "#ff8844";
-      ctx.fillText("AD", cols.points + 34, ry + rowH / 2 + 5);
+      ctx.fillText("AD", cols.points + 22, dcy + 4);
     } else {
       const ptsFormatted = ptsStr.length === 1 ? " " + ptsStr : ptsStr;
-      drawSegmentText(cols.points + 16, dcy, ptsFormatted, 13, 18, 2, "#ffffff", digitOff);
+      drawSegmentText(cols.points + 8, dcy, ptsFormatted, 11, 16, 2, "#ffffff", digitOff);
     }
 
     // Row divider
@@ -672,7 +686,7 @@ function drawScoreboard() {
   // Vertical dividers between columns
   ctx.strokeStyle = "rgba(42, 90, 58, 0.6)";
   ctx.lineWidth = 0.5;
-  const vDividers = [cols.s1 - 2, cols.s2 - 2, cols.s3 - 2, cols.games - 4, cols.points - 4];
+  const vDividers = [cols.s2 - 1, cols.s3 - 1, cols.name - 2, cols.sets - 2, cols.games - 2, cols.points - 2];
   const vTop = hdrY;
   const vBot = hdrY + headerH + rowH * 2;
   for (const vx of vDividers) {
@@ -682,12 +696,21 @@ function drawScoreboard() {
     ctx.stroke();
   }
 
-  // Tiebreak indicator
+  // Tiebreak indicator below board
   if (score.tiebreak) {
     ctx.font = "bold 9px 'Courier New', monospace";
     ctx.textAlign = "center";
     ctx.fillStyle = "#ff8844";
-    ctx.fillText("TIEBREAK", bx + boardW / 2, by + boardH + 11);
+    ctx.fillText("TIEBREAK", bx + boardW / 2, by + boardH + 14);
+  }
+
+  // Rally count below board
+  if (rallyCount > 0) {
+    ctx.font = "bold 9px 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#88aa66";
+    const rallyY = score.tiebreak ? by + boardH + 28 : by + boardH + 14;
+    ctx.fillText("RALLY " + rallyCount, bx + boardW / 2, rallyY);
   }
 
   // Reset letterSpacing so it doesn't bleed into other drawing
@@ -735,9 +758,9 @@ function drawQuestionOverlay() {
   // Reset any scoreboard font state that could bleed through
   ctx.letterSpacing = "0px";
 
-  // Dark backdrop
+  // Dark backdrop (court area only, keep scoreboard visible)
   ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, COURT_AREA_WIDTH, CANVAS_HEIGHT);
 
   const cardX = 100;
   const cardY = 100;
@@ -864,9 +887,9 @@ function drawTitleScreen() {
   // Draw a mini court in background
   drawCourt();
 
-  // Overlay
+  // Overlay (court area only)
   ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, COURT_AREA_WIDTH, CANVAS_HEIGHT);
 
   // Title
   ctx.fillStyle = "#fff";
@@ -902,9 +925,9 @@ function drawTitleScreen() {
 }
 
 function drawPointMessage() {
-  // Dark backdrop always visible while in POINT_SCORED state
+  // Dark backdrop always visible while in POINT_SCORED state (court area only)
   ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, COURT_AREA_WIDTH, CANVAS_HEIGHT);
 
   // Point message fades but stays readable
   const msgAlpha = pointMessageTimer > 0 ? Math.min(1, pointMessageTimer / 30) : 0.6;
@@ -944,7 +967,7 @@ function drawQuestionResult() {
 
 function drawGameOver() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(0, 0, COURT_AREA_WIDTH, CANVAS_HEIGHT);
 
   ctx.fillStyle = score.matchWinner === "player" ? "#4CAF50" : "#f44336";
   ctx.font = "bold 48px Arial";

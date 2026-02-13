@@ -163,11 +163,11 @@ class TestConfigurationConstants:
 			f"constant {const_name} not found"
 		)
 
-	def test_canvas_width_is_800(self, script_content: str) -> None:
-		"""Canvas width should be 800."""
+	def test_canvas_width_is_1060(self, script_content: str) -> None:
+		"""Canvas width should be 1060 (court 800 + scoreboard panel 260)."""
 		match = re.search(r"const CANVAS_WIDTH\s*=\s*(\d+)", script_content)
 		assert match is not None
-		assert int(match.group(1)) == 800
+		assert int(match.group(1)) == 1060
 
 	def test_canvas_height_is_600(self, script_content: str) -> None:
 		"""Canvas height should be 600."""
