@@ -47,7 +47,7 @@ const NET_DEPTH = 0.5;
 
 // ===== QUESTION BANK =====
 const QUESTIONS = [
-  // Python (~15)
+  // Python
   { category: "Python", question: "What is the correct way to define a function in Python?", choices: ["function myFunc():", "def myFunc():", "fun myFunc():", "define myFunc():"], answer: 1 },
   { category: "Python", question: "Which keyword is used to create a class in Python?", choices: ["struct", "object", "class", "define"], answer: 2 },
   { category: "Python", question: "How do you start a for loop iterating over a list in Python?", choices: ["for item in list:", "foreach item in list:", "for (item : list):", "loop item in list:"], answer: 0 },
@@ -63,8 +63,59 @@ const QUESTIONS = [
   { category: "Python", question: "What is the correct way to import a module?", choices: ["include math", "import math", "require math", "using math"], answer: 1 },
   { category: "Python", question: "What does range(3) produce?", choices: ["[1, 2, 3]", "[0, 1, 2]", "[0, 1, 2, 3]", "[1, 2]"], answer: 1 },
   { category: "Python", question: "How do you handle exceptions in Python?", choices: ["try/catch", "try/except", "try/handle", "begin/rescue"], answer: 1 },
+  { category: "Python", question: "What does 'self' refer to in a Python class method?", choices: ["The class itself", "The current instance", "The parent class", "A global variable"], answer: 1 },
+  { category: "Python", question: "What is the output of bool(0)?", choices: ["True", "False", "0", "Error"], answer: 1 },
+  { category: "Python", question: "Which method returns a list of dictionary keys?", choices: [".keys()", ".items()", ".values()", ".pairs()"], answer: 0 },
+  { category: "Python", question: "What does the 'in' operator do?", choices: ["Imports a module", "Checks membership", "Creates an iterator", "Defines a variable"], answer: 1 },
+  { category: "Python", question: "How do you create a list comprehension?", choices: ["list(x for x)", "[x for x in range(5)]", "list.comp(x)", "{x for x in range(5)}"], answer: 1 },
+  { category: "Python", question: "What does str(42) return?", choices: ["42", "'42'", "Error", "None"], answer: 1 },
+  { category: "Python", question: "Which keyword exits a loop early?", choices: ["stop", "exit", "break", "return"], answer: 2 },
+  { category: "Python", question: "What does the ** operator do?", choices: ["Multiplication", "Exponentiation", "Floor division", "Modulus"], answer: 1 },
+  { category: "Python", question: "How do you open a file for reading in Python?", choices: ["file.read('f.txt')", "open('f.txt', 'r')", "read('f.txt')", "File('f.txt')"], answer: 1 },
+  { category: "Python", question: "What does [1, 2, 3][1:] return?", choices: ["[1]", "[1, 2]", "[2, 3]", "[1, 2, 3]"], answer: 2 },
+  { category: "Python", question: "Which built-in function returns the largest item?", choices: ["big()", "largest()", "max()", "top()"], answer: 2 },
+  { category: "Python", question: "What is the result of 10 % 3?", choices: ["3", "1", "0", "3.33"], answer: 1 },
+  { category: "Python", question: "How do you create a set in Python?", choices: ["{1, 2, 3}", "[1, 2, 3]", "(1, 2, 3)", "<1, 2, 3>"], answer: 0 },
+  { category: "Python", question: "What does .join() do?", choices: ["Joins two lists", "Concatenates strings with separator", "Merges dictionaries", "Combines tuples"], answer: 1 },
+  { category: "Python", question: "What is the default return value of a function?", choices: ["0", "False", "None", "Empty string"], answer: 2 },
+  { category: "Python", question: "Which keyword skips to the next loop iteration?", choices: ["skip", "next", "continue", "pass"], answer: 2 },
+  { category: "Python", question: "What does enumerate() do?", choices: ["Counts items", "Returns index-value pairs", "Sorts a list", "Filters items"], answer: 1 },
+  { category: "Python", question: "How do you check if a key exists in a dictionary?", choices: ["dict.contains(key)", "key in dict", "dict.exists(key)", "dict.has(key)"], answer: 1 },
+  { category: "Python", question: "What does sorted([3, 1, 2]) return?", choices: ["[3, 1, 2]", "[1, 2, 3]", "[3, 2, 1]", "None"], answer: 1 },
+  { category: "Python", question: "Which string method converts to uppercase?", choices: [".upper()", ".toUpper()", ".capitalize()", ".upcase()"], answer: 0 },
+  { category: "Python", question: "What does type([]) return?", choices: ["<class 'tuple'>", "<class 'list'>", "<class 'array'>", "<class 'set'>"], answer: 1 },
+  { category: "Python", question: "How do you write a multi-line string?", choices: ["Using triple quotes", "Using backslashes only", "Using parentheses", "Not possible in Python"], answer: 0 },
+  { category: "Python", question: "What is the output of 'hello'[0]?", choices: ["'hello'", "'h'", "'e'", "Error"], answer: 1 },
+  { category: "Python", question: "Which function converts a string to an integer?", choices: ["str()", "int()", "float()", "num()"], answer: 1 },
+  { category: "Python", question: "What does .pop() do on a list?", choices: ["Adds an item", "Removes and returns the last item", "Returns the first item", "Clears the list"], answer: 1 },
+  { category: "Python", question: "What does the 'with' statement do?", choices: ["Creates a loop", "Manages resource cleanup", "Defines a class", "Imports a module"], answer: 1 },
+  { category: "Python", question: "How do you get user input in Python 3?", choices: ["raw_input()", "input()", "scanf()", "read()"], answer: 1 },
+  { category: "Python", question: "What does .split() do on a string?", choices: ["Joins strings", "Splits into a list", "Removes characters", "Finds a substring"], answer: 1 },
+  { category: "Python", question: "What is the result of not True?", choices: ["True", "False", "None", "Error"], answer: 1 },
+  { category: "Python", question: "Which method adds all items from one list to another?", choices: [".append()", ".extend()", ".merge()", ".concat()"], answer: 1 },
+  { category: "Python", question: "What does zip() do?", choices: ["Compresses files", "Pairs elements from iterables", "Sorts a list", "Filters items"], answer: 1 },
+  { category: "Python", question: "What is a lambda function?", choices: ["A named function", "An anonymous one-line function", "A class method", "A recursive function"], answer: 1 },
+  { category: "Python", question: "What does .format() do on a string?", choices: ["Changes font", "Inserts values into placeholders", "Validates format", "Converts encoding"], answer: 1 },
+  { category: "Python", question: "How do you copy a list in Python?", choices: ["new = old", "new = old.copy()", "new = copy(old)", "new = old.clone()"], answer: 1 },
+  { category: "Python", question: "What does 'is' check in Python?", choices: ["Value equality", "Type equality", "Object identity", "String matching"], answer: 2 },
+  { category: "Python", question: "What does map() return in Python 3?", choices: ["A list", "A map object (iterator)", "A dictionary", "A tuple"], answer: 1 },
+  { category: "Python", question: "Which keyword defines a generator function?", choices: ["generate", "yield", "return", "async"], answer: 1 },
+  { category: "Python", question: "What does abs(-5) return?", choices: ["-5", "5", "0", "Error"], answer: 1 },
+  { category: "Python", question: "How do you reverse a list in place?", choices: [".reverse()", ".flip()", ".invert()", "reversed()"], answer: 0 },
+  { category: "Python", question: "What does isinstance(5, int) return?", choices: ["True", "False", "'int'", "5"], answer: 0 },
+  { category: "Python", question: "What is the output of 'abc' * 2?", choices: ["'abc2'", "'abcabc'", "Error", "'aabbcc'"], answer: 1 },
+  { category: "Python", question: "Which module provides random number generation?", choices: ["math", "random", "numbers", "rand"], answer: 1 },
+  { category: "Python", question: "What does dict.get('key', 0) do if key is missing?", choices: ["Raises KeyError", "Returns None", "Returns 0", "Returns False"], answer: 2 },
+  { category: "Python", question: "How do you create a virtual environment?", choices: ["pip install venv", "python -m venv myenv", "virtualenv --create", "python --venv myenv"], answer: 1 },
+  { category: "Python", question: "What does the walrus operator := do?", choices: ["Compares values", "Assigns and returns a value", "Checks type", "Floor divides"], answer: 1 },
+  { category: "Python", question: "What does list(range(2, 8, 2)) return?", choices: ["[2, 4, 6]", "[2, 4, 6, 8]", "[2, 3, 4, 5, 6, 7]", "[2, 8]"], answer: 0 },
+  { category: "Python", question: "Which method removes a specific item from a list by value?", choices: [".delete()", ".remove()", ".discard()", ".drop()"], answer: 1 },
+  { category: "Python", question: "What is f'{name} is {age}' called?", choices: ["Template string", "Format string", "f-string", "Raw string"], answer: 2 },
+  { category: "Python", question: "What does any([False, False, True]) return?", choices: ["True", "False", "[True]", "Error"], answer: 0 },
+  { category: "Python", question: "What does all([True, True, False]) return?", choices: ["True", "False", "[False]", "Error"], answer: 1 },
+  { category: "Python", question: "How do you install a package with pip?", choices: ["pip get package", "pip install package", "pip add package", "pip download package"], answer: 1 },
 
-  // JavaScript (~10)
+  // JavaScript
   { category: "JavaScript", question: "Which keyword declares a block-scoped variable in JS?", choices: ["var", "let", "define", "dim"], answer: 1 },
   { category: "JavaScript", question: "What does === check in JavaScript?", choices: ["Value only", "Type only", "Value and type", "Reference"], answer: 2 },
   { category: "JavaScript", question: "How do you write an arrow function?", choices: ["function => {}", "() -> {}", "() => {}", "=> () {}"], answer: 2 },
@@ -75,8 +126,13 @@ const QUESTIONS = [
   { category: "JavaScript", question: "How do you declare a constant in JavaScript?", choices: ["constant x", "const x", "let const x", "final x"], answer: 1 },
   { category: "JavaScript", question: "Which array method creates a new array with filtered elements?", choices: [".map()", ".filter()", ".reduce()", ".find()"], answer: 1 },
   { category: "JavaScript", question: "What does 'async/await' help with?", choices: ["Loops", "Error handling", "Asynchronous code", "DOM manipulation"], answer: 2 },
+  { category: "JavaScript", question: "What does NaN stand for?", choices: ["Not a Null", "Not a Number", "Negative and Null", "No actual Number"], answer: 1 },
+  { category: "JavaScript", question: "Which method converts a JSON string to an object?", choices: ["JSON.parse()", "JSON.stringify()", "JSON.convert()", "JSON.read()"], answer: 0 },
+  { category: "JavaScript", question: "What does Array.isArray([]) return?", choices: ["false", "true", "undefined", "'array'"], answer: 1 },
+  { category: "JavaScript", question: "How do you write a template literal?", choices: ["Single quotes", "Double quotes", "Backticks", "Parentheses"], answer: 2 },
+  { category: "JavaScript", question: "What does .forEach() return?", choices: ["A new array", "undefined", "The original array", "A boolean"], answer: 1 },
 
-  // HTML/CSS (~10)
+  // HTML/CSS
   { category: "HTML/CSS", question: "Which HTML tag is used for the largest heading?", choices: ["<head>", "<h6>", "<h1>", "<header>"], answer: 2 },
   { category: "HTML/CSS", question: "What CSS property changes text color?", choices: ["text-color", "font-color", "color", "text-style"], answer: 2 },
   { category: "HTML/CSS", question: "Which HTML tag creates a hyperlink?", choices: ["<link>", "<a>", "<href>", "<url>"], answer: 1 },
@@ -88,7 +144,13 @@ const QUESTIONS = [
   { category: "HTML/CSS", question: "Which selector targets elements with class 'box'?", choices: ["#box", ".box", "*box", "box"], answer: 1 },
   { category: "HTML/CSS", question: "What CSS unit is relative to the root font size?", choices: ["em", "px", "rem", "%"], answer: 2 },
 
-  // SQL (~7)
+  { category: "HTML/CSS", question: "Which CSS property controls element transparency?", choices: ["visibility", "opacity", "transparency", "display"], answer: 1 },
+  { category: "HTML/CSS", question: "What HTML attribute specifies an image source?", choices: ["href", "link", "src", "url"], answer: 2 },
+  { category: "HTML/CSS", question: "Which CSS property centers text horizontally?", choices: ["text-align: center", "align: center", "text-center: true", "horizontal-align: center"], answer: 0 },
+  { category: "HTML/CSS", question: "What does the <em> tag do?", choices: ["Embeds media", "Emphasizes text (italic)", "Creates an email link", "Adds an emoji"], answer: 1 },
+  { category: "HTML/CSS", question: "Which CSS property sets the background color?", choices: ["bg-color", "color", "background-color", "fill-color"], answer: 2 },
+
+  // SQL
   { category: "SQL", question: "Which SQL clause filters rows?", choices: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: 2 },
   { category: "SQL", question: "Which JOIN returns only matching rows from both tables?", choices: ["LEFT JOIN", "RIGHT JOIN", "INNER JOIN", "FULL JOIN"], answer: 2 },
   { category: "SQL", question: "What SQL keyword groups rows for aggregate functions?", choices: ["ORDER BY", "GROUP BY", "HAVING", "SORT BY"], answer: 1 },
@@ -97,12 +159,21 @@ const QUESTIONS = [
   { category: "SQL", question: "Which clause sorts the result set?", choices: ["SORT BY", "GROUP BY", "ORDER BY", "ARRANGE BY"], answer: 2 },
   { category: "SQL", question: "What SQL command creates a new table?", choices: ["MAKE TABLE", "NEW TABLE", "CREATE TABLE", "ADD TABLE"], answer: 2 },
 
-  // General (~5)
+  { category: "SQL", question: "What does COUNT(*) do?", choices: ["Counts columns", "Counts all rows", "Counts distinct values", "Counts NULL values"], answer: 1 },
+  { category: "SQL", question: "Which keyword limits the number of results?", choices: ["TOP", "LIMIT", "MAX", "FIRST"], answer: 1 },
+  { category: "SQL", question: "What does NULL mean in SQL?", choices: ["Zero", "Empty string", "Unknown or missing value", "False"], answer: 2 },
+
+  // General
   { category: "General", question: "What is the time complexity of binary search?", choices: ["O(n)", "O(log n)", "O(n log n)", "O(1)"], answer: 1 },
   { category: "General", question: "Which data structure uses FIFO ordering?", choices: ["Stack", "Queue", "Tree", "Hash Map"], answer: 1 },
   { category: "General", question: "What Git command stages changes for commit?", choices: ["git commit", "git push", "git add", "git stage"], answer: 2 },
   { category: "General", question: "What does 'boolean' mean?", choices: ["A decimal number", "A true/false value", "A text string", "A list of items"], answer: 1 },
   { category: "General", question: "Which data structure uses LIFO ordering?", choices: ["Queue", "Stack", "Array", "Linked List"], answer: 1 },
+  { category: "General", question: "What does API stand for?", choices: ["Application Programming Interface", "Applied Program Integration", "Automated Protocol Interface", "Application Process Input"], answer: 0 },
+  { category: "General", question: "What is a recursive function?", choices: ["A function that runs once", "A function that calls itself", "A function with no return", "A function with many parameters"], answer: 1 },
+  { category: "General", question: "What does HTTP stand for?", choices: ["HyperText Transfer Protocol", "High Tech Transfer Protocol", "HyperText Transmission Path", "Hosted Transfer Text Protocol"], answer: 0 },
+  { category: "General", question: "What is the purpose of a hash table?", choices: ["Sorting data", "Fast key-value lookups", "Encrypting data", "Compressing files"], answer: 1 },
+  { category: "General", question: "What does IDE stand for?", choices: ["Internet Development Engine", "Integrated Development Environment", "Interactive Data Editor", "Internal Debug Executor"], answer: 1 },
 ];
 
 // ===== GAME STATE =====
